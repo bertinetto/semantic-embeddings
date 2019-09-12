@@ -30,7 +30,7 @@ ARCHITECTURES = ['simple', 'resnet-32', 'resnet-110', 'resnet-110-fc', 'resnet-1
                  'densenet-100-12', 'densenet-100-24', 'densenet-bc-190-40', 'pyramidnet-272-200', 'pyramidnet-110-270',
                  'resnet-50', 'resnet-101', 'resnet-152', 'rn18', 'rn34', 'rn50', 'rn101', 'rn152', 'rn200', 'nasnet-a']
 
-LR_SCHEDULES = ['SGD', 'SGDR', 'CLR', 'ResNet-Schedule']
+LR_SCHEDULES = ['SGD', 'SGDR', 'CLR', 'ResNet-Schedule', 'adam-no-schedule']
 
 
 
@@ -280,7 +280,7 @@ def get_custom_objects(architecture):
         return {}
 
 
-def get_lr_schedule(schedule, num_samples, batch_size, schedule_args = {}):
+def get_lr_schedule(schedule, num_samples, batch_size, optimizer, adam_lr, num_epochs, schedule_args={}):
     """ Creates a learning rate schedule.
 
     # Arguments:
@@ -388,6 +388,12 @@ def get_lr_schedule(schedule, num_samples, batch_size, schedule_args = {}):
                 return 0.01
         
         return [keras.callbacks.LearningRateScheduler(resnet_scheduler)], 164
+
+    elif schedule.lower() == 'adam-no-schedule':
+        assert optimizer == 'adam'
+        def adam_no_schedule(epoch):
+            return adam_lr
+        return [keras.callbacks.LearningRateScheduler(adam_no_schedule)], num_epochs
     
     else:
     
