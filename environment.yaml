@@ -1,0 +1,17 @@
+name: barz-denzler
+channels:
+        - anaconda
+        - conda-forge
+dependencies:
+        - python=3.6
+        - Cython
+        - numpy
+        - numexpr
+        - pillow
+        - cudatoolkit=9.0
+        - nltk
+        - scipy
+        - scikit-learn
+        - keras=2.2.0
+        - tensorflow-gpu=1.8
+        - matplotlib
