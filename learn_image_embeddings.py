@@ -12,7 +12,6 @@ import utils
 from datasets import get_data_generator
 
 
-
 def cls_model(embed_model, num_classes, cls_base = None):
     """ Appends a classifier to an embedding model.
 
@@ -63,6 +62,7 @@ if __name__ == '__main__':
                                  'The special value "onehot" may be used to generate one-hot embeddings on the fly.')
     arggroup = parser.add_argument_group('Training parameters')
     arggroup.add_argument('--architecture', type = str, default = 'simple', choices = utils.ARCHITECTURES, help = 'Type of network architecture.')
+    arggroup.add_argument('--pretrained', action = 'store_false', default=True, help='Start training from imagenet pretrained architecture')
     arggroup.add_argument('--loss', type = str, default = 'inv_corr', choices = ['mse', 'inv_corr', 'unnorm_corr', 'softmax_corr'],
                           help = 'Loss function for learning embeddings. Use "mse" (mean squared error) for distance-based and "inv_corr" (negated dot product) for similarity-based L2-normalized embeddings. '
                                  '"unnorm_corr" and "softmax_corr" are the same as "inv_corr", but the first does not perform L2-normalization and the latter performs softmax activation instead.')
@@ -94,7 +94,10 @@ if __name__ == '__main__':
     utils.add_lr_schedule_arguments(parser)
 
     args = parser.parse_args()
-    
+
+    if args.pretrained:
+        assert args.architecture in ['resnet-50', 'resnet-101', 'resnet-152']
+
     if args.val_batch_size is None:
         args.val_batch_size = args.batch_size
 
@@ -122,7 +125,7 @@ if __name__ == '__main__':
             print('Resuming from snapshot {}'.format(args.snapshot))
             model = keras.models.load_model(args.snapshot, custom_objects = utils.get_custom_objects(args.architecture), compile = False)
         else:
-            embed_model = utils.build_network(embedding.shape[1], args.architecture)
+            embed_model = utils.build_network(embedding.shape[1], args.architecture, args.pretrained)
             model = embed_model
             if args.loss == 'inv_corr':
                 model = keras.models.Model(model.inputs, keras.layers.Lambda(utils.l2norm, name = 'l2norm')(model.output))

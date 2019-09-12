@@ -11,7 +11,8 @@ try:
         backend=keras.backend,
         layers=keras.layers,
         models=keras.models,
-        utils=keras.utils
+        utils=keras.utils,
+        engine=keras.engine
     )
 except ImportError:
     pass
@@ -129,7 +130,7 @@ def l2norm(x):
     return K.tf.nn.l2_normalize(x, -1)
 
 
-def build_network(num_outputs, architecture, classification = False, no_softmax = False, name = None):
+def build_network(num_outputs, architecture, pretrained=False, classification = False, no_softmax = False, name = None):
     """ Constructs a CNN.
     
     # Arguments:
@@ -230,7 +231,10 @@ def build_network(num_outputs, architecture, classification = False, no_softmax 
             # ResNet50 has been available from the beginning, while the other two were added in keras-applications 1.0.7.
             # Thus, we use the initial implementation of ResNet50 for compatibility's sake.
             factory = keras.applications.ResNet50
-        rn = factory(include_top=False, weights=None)
+        if pretrained:
+            rn = factory(include_top=False, weights='imagenet')
+        else:
+            rn = factory(include_top=False, weights=None)
         # Depending on the Keras version, the ResNet50 model may or may not contain a final average pooling layer.
         rn_out = rn.layers[-2].output if isinstance(rn.layers[-1], keras.layers.AveragePooling2D) else rn.layers[-1].output
         x = keras.layers.GlobalAvgPool2D(name='avg_pool')(rn_out)
