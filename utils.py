@@ -2,7 +2,7 @@ import sys, os.path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'models', 'DenseNet'))
 
 import numpy as np
-
+import tensorflow as tf
 import keras
 from keras import backend as K
 try:
@@ -85,7 +85,7 @@ def nn_accuracy(embedding, dot_prod_sim = False, k = 1):
         if k <= 1:
             return K.cast(K.less(K.abs(true_dist - K.min(dist, axis = -1)), 1e-6), K.floatx())
         else:
-            return K.cast(K.any(K.less(K.abs(-1 * K.tf.nn.top_k(-1 * dist, k, sorted=False)[0] - true_dist[:,None]), 1e-6), axis=-1), K.floatx())
+            return K.cast(K.any(K.less(K.abs(-1 * tf.nn.top_k(-1 * dist, k, sorted=False)[0] - true_dist[:,None]), 1e-6), axis=-1), K.floatx())
     
     def max_sim_acc(y_true, y_pred):
 
@@ -95,7 +95,7 @@ def nn_accuracy(embedding, dot_prod_sim = False, k = 1):
         if k <= 1:
             return K.cast(K.less(K.abs(K.max(sim, axis = -1) - true_sim), 1e-6), K.floatx())
         else:
-            return K.cast(K.any(K.less(K.abs(K.tf.nn.top_k(sim, k, sorted=False)[0] - true_sim[:,None]), 1e-6), axis=-1), K.floatx())
+            return K.cast(K.any(K.less(K.abs(tf.nn.top_k(sim, k, sorted=False)[0] - true_sim[:,None]), 1e-6), axis=-1), K.floatx())
     
     metric = max_sim_acc if dot_prod_sim else nn_accuracy
     if k > 1:
@@ -127,7 +127,7 @@ def devise_ranking_loss(embedding, margin = 0.1):
 
 def l2norm(x):
     """ L2-normalizes a tensor along the last axis. """
-    return K.tf.nn.l2_normalize(x, -1)
+    return tf.nn.l2_normalize(x, -1)
 
 
 def build_network(num_outputs, architecture, pretrained=False, classification = False, no_softmax = False, name = None):
