@@ -12,6 +12,8 @@ dependencies:
         - nltk
         - scipy
         - scikit-learn
-        - keras=2.2.0
+        - keras=2.2.5
         - tensorflow-gpu=1.8
         - matplotlib
+
+# After having installed the conda environment, run pip install keras_applications=1.0.7 to patch a bug
