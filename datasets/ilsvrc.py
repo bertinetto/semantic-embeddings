@@ -10,10 +10,9 @@ from . import IMAGENET_MEAN, IMAGENET_STD
 from .common import FileDatasetGenerator
 
 
-
 class ILSVRCGenerator(FileDatasetGenerator):
 
-    def __init__(self, root_dir, classes = None, mean = IMAGENET_MEAN, std = IMAGENET_STD, color_mode = "rgb"):
+    def __init__(self, root_dir, train_dir='train', val_dir='val', classes = None, mean = IMAGENET_MEAN, std = IMAGENET_STD, color_mode = "rgb"):
         """ ILSVRC data generator.
 
         # Arguments:
@@ -32,8 +31,8 @@ class ILSVRCGenerator(FileDatasetGenerator):
         """
         
         super(ILSVRCGenerator, self).__init__(root_dir, default_target_size = 256, randzoom_range = (256, 480), color_mode = color_mode)
-        self.train_dir = os.path.join(self.root_dir, 'ILSVRC2012_img_train')
-        self.test_dir = os.path.join(self.root_dir, 'ILSVRC2012_img_val')
+        self.train_dir = os.path.join(self.root_dir, train_dir)
+        self.test_dir = os.path.join(self.root_dir, val_dir)
         
         # Search for classes
         if classes is None:
@@ -46,10 +45,10 @@ class ILSVRCGenerator(FileDatasetGenerator):
         
         # Search for images
         for lbl, subdir in enumerate(self.classes):
-            cls_files = sorted(list_pictures(os.path.join(self.train_dir, subdir), 'jpeg'))
+            cls_files = sorted(list_pictures(os.path.join(self.train_dir, subdir)))
             self.train_img_files += cls_files
             self._train_labels += [lbl] * len(cls_files)
-            cls_files = sorted(list_pictures(os.path.join(self.test_dir, subdir), 'jpeg'))
+            cls_files = sorted(list_pictures(os.path.join(self.test_dir, subdir)))
             self.test_img_files += cls_files
             self._test_labels += [lbl] * len(cls_files)
         print('Found {} training and {} validation images from {} classes.'.format(self.num_train, self.num_test, self.num_classes))
