@@ -92,7 +92,7 @@ def get_data_generator(dataset, data_root, classes = None):
     
     elif dataset == 'ilsvrc':
     
-        return ILSVRCGenerator(data_root, classes, **kwargs)
+        return ILSVRCGenerator(data_root, train_dir='train', val_dir='val', classes=classes, **kwargs)
     
     elif dataset == 'nab':
     
@@ -135,7 +135,10 @@ def get_data_generator(dataset, data_root, classes = None):
         if ('default_target_size' not in kwargs) and ('randzoom_range' not in kwargs):
             kwargs['randzoom_range'] = (256, 480)
         return INatGenerator(data_root, 'train2019.json', 'val2019.json', **kwargs)
-    
+
+    elif dataset in ['inat2019-custom', 'tiered-c']:
+        # custom version of iNaturalist 2019 divides classes in folders like ILSVRC
+        return ILSVRCGenerator(data_root, train_dir='train', val_dir='val', classes=classes, **kwargs)
     else:
         
         raise ValueError('Unknown dataset: {}'.format(dataset))
