@@ -5,8 +5,10 @@ import pickle
 import os
 import shutil
 
+import tensorflow as tf
 import keras
 from keras import backend as K
+
 
 import utils
 from datasets import get_data_generator
@@ -51,6 +53,16 @@ def transform_inputs(X, y, embedding, num_classes=None):
 if __name__ == '__main__':
 
     # Parse arguments
+    # From github example:
+
+    # --dataset CIFAR-100 --data_root /mnt/linux_disk/dataset/cifar-100-python/ --embedding embeddings/cifar100.unitsphere.pickle --architecture resnet-50 --cls_weight 0.1 --model_dump cifar100-embedding.model.h5 --feature_dump cifar100-features.pickle
+
+    # --dataset ILSVRC --data_root /mnt/linux_disk/dataset/ilsvrc12 --embedding embeddings/imagenet_mintree.unitsphere.pickle --architecture resnet-50 --cls_weight 0.1 --model_dump imagenet_unitsphere-embed+cls_rn50.model.h5 --feature_dump ilsvrc-features.pickle --batch_size 128 --gpus 2 --epochs 80
+
+    # --dataset tiered-c --data_root /mnt/linux_disk/dataset/tiered-imagenet-preproc/miniTieredImagenet_C_r84 --embedding embeddings/imagenet_mintree.unitsphere.pickle --architecture resnet-50 --cls_weight 0.1 --model_dump tieredC_unitsphere-embed+cls_rn50.model.h5 --feature_dump tieredC-features.pickle --batch_size 128 --gpus 2 --epochs 80
+
+    # --dataset inat2019-custom --data_root /mnt/linux_disk/dataset/custom-inaturalist19/original_size --embedding embeddings/inaturalist2019.unitsphere.pickle --architecture resnet-50 --cls_weight 0.1 --model_dump inat2019_unitsphere-embed+cls_rn50.model.h5 --feature_dump inat2019-features.pickle --batch_size 128 --gpus 2 --epochs 80
+
     parser = argparse.ArgumentParser(description='Learns to map images onto class embeddings.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     arggroup = parser.add_argument_group('Data parameters')
     arggroup.add_argument('--dataset', type=str, required=True, help='Training dataset. See README.md for a list of available datasets.')
@@ -74,7 +86,7 @@ if __name__ == '__main__':
     arggroup.add_argument('--clipgrad', type=float, default=10.0, help='Gradient norm clipping.')
     arggroup.add_argument('--nesterov', action='store_true', default=False, help='Use Nesterov momentum instead of standard momentum.')
     arggroup.add_argument('--epochs', type=int, default=150, help='Number of training epochs.')
-    arggroup.add_argument('--batch_size', type=int, default=100, help='Batch size.')
+    arggroup.add_argument('--batch_size', type=int, default=128, help='Batch size.')
     arggroup.add_argument('--val_batch_size', type=int, default=None, help='Validation batch size.')
     arggroup.add_argument('--snapshot', type=str, default=None,
                           help='Path where snapshots should be stored after every epoch. If existing, it will be used to resume training.')
@@ -112,6 +124,13 @@ if __name__ == '__main__':
             embed_labels = embedding['ind2label']
             embedding = embedding['embedding']
 
+    if args.dataset=='inat2019-custom':
+        embed_labels = ['nat%04d' % int(i) for i in embed_labels]
+
+    if args.dataset == 'tiered-c':
+        # todo: remove non-existing classes from embed_labels and embedding
+        pass
+
     data_generator = get_data_generator(args.dataset, args.data_root, classes=embed_labels)
 
     # Load dataset
@@ -134,7 +153,8 @@ if __name__ == '__main__':
         args.val_batch_size = args.batch_size
 
     # Configure environment
-    K.set_session(K.tf.Session(config=K.tf.ConfigProto(gpu_options={'allow_growth': True})))
+    # K.set_session(K.tf.Session(config=K.tf.ConfigProto(gpu_options={'allow_growth': True})))
+    K.set_session(tf.Session(config=tf.ConfigProto(gpu_options={'allow_growth': True})))
 
     # Construct and train model
     if (args.gpus <= 1) or args.gpu_merge:
@@ -152,7 +172,7 @@ if __name__ == '__main__':
                 model = cls_model(model, data_generator.num_classes, args.cls_base)
         par_model = model if args.gpus <= 1 else keras.utils.multi_gpu_model(model, gpus=args.gpus, cpu_merge=False)
     else:
-        with K.tf.device('/cpu:0'):
+        with tf.device('/cpu:0'):
             if args.snapshot and os.path.exists(args.snapshot):
                 print('Resuming from snapshot {}'.format(args.snapshot))
                 model = keras.models.load_model(args.snapshot, custom_objects=utils.get_custom_objects(args.architecture), compile=False)
